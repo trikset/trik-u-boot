@@ -365,6 +365,7 @@ extern unsigned int __machine_arch_type;
 #define MACH_TYPE_TS219                2139
 #define MACH_TYPE_PCA100               2149
 #define MACH_TYPE_DAVINCI_DA850_EVM    2157
+#define MACH_TYPE_DAVINCI_TRIK         2158
 #define MACH_TYPE_AT91SAM9G10EK        2159
 #define MACH_TYPE_OMAP_4430SDP         2160
 #define MACH_TYPE_MAGX_ZN5             2162
