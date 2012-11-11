@@ -28,5 +28,5 @@
 #define BOOT_DEVICE_MMC1	3
 #define BOOT_DEVICE_MMC2	4	/* dummy */
 #define BOOT_DEVICE_MMC2_2	5	/* dummy */
-
+#define BOOT_DEVICE_UART	6
 #endif

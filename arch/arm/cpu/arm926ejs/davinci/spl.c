@@ -27,10 +27,12 @@
 #include <asm/utils.h>
 #include <nand.h>
 #include <asm/arch/dm365_lowlevel.h>
+#include <asm/arch/davinci_boot.h>
 #include <ns16550.h>
 #include <malloc.h>
 #include <spi_flash.h>
 #include <mmc.h>
+#include <linux/compiler.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -83,12 +85,41 @@ u32 spl_boot_mode(void)
 
 u32 spl_boot_device(void)
 {
+#if defined(CONFIG_SOC_DA8XX) && defined(CONFIG_SPL_BOOT_DEVICE_AUTODETECT)
+	u32 bootmode = readl(BOOTCFG_REG) & BOOTCFG_REG_DEVICE_MASK;
+	switch (bootmode) {
 #ifdef CONFIG_SPL_NAND_SIMPLE
+	case BOOTCFG_DEVICE_NAND8:
+	case BOOTCFG_DEVICE_NAND16:
+		return BOOT_DEVICE_NAND;
+#endif
+#ifdef CONFIG_SPL_SPI_LOAD
+	case BOOTCFG_DEVICE_SPI0_FLASH:
+	case BOOTCFG_DEVICE_SPI1_FLASH:
+		return BOOT_DEVICE_SPI;
+#endif
+#ifdef CONFIG_SPL_YMODEM_LOAD
+	case BOOTCFG_DEVICE_UART0:
+	case BOOTCFG_DEVICE_UART1:
+	case BOOTCFG_DEVICE_UART2:
+		return BOOT_DEVICE_UART;
+#endif
+#ifdef CONFIG_SPL_MMC_LOAD
+	case BOOTCFG_DEVICE_MMC_OR_SD0:
+		return BOOT_DEVICE_MMC1;
+#endif
+	default:
+		puts("Unknown boot device\n");
+		hang();
+	}
+#elif defined(CONFIG_SPL_NAND_SIMPLE)
 	return BOOT_DEVICE_NAND;
 #elif defined(CONFIG_SPL_SPI_LOAD)
 	return BOOT_DEVICE_SPI;
 #elif defined(CONFIG_SPL_MMC_LOAD)
 	return BOOT_DEVICE_MMC1;
+#elif defined(CONFIG_SPL_YMODEM_LOAD)
+	return BOOT_DEVICE_UART;
 #else
 	puts("Unknown boot device\n");
 	hang();
