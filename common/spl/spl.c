@@ -114,12 +114,29 @@ void spl_parse_image_header(const struct image_header *header)
 		/* Signature not found - assume u-boot.bin */
 		debug("mkimage signature not found - ih_magic = %x\n",
 			header->ih_magic);
-		/* Let's assume U-Boot will not be more than 200 KB */
-		spl_image.size = CONFIG_SYS_MONITOR_LEN;
-		spl_image.entry_point = CONFIG_SYS_UBOOT_START;
-		spl_image.load_addr = CONFIG_SYS_TEXT_BASE;
-		spl_image.os = IH_OS_U_BOOT;
-		spl_image.name = "U-Boot";
+
+#ifdef CONFIG_SPL_GUNZIP_SUPPORT
+		if ((image_get_magic(header) >> 16) == 0x1f8b){
+			/* assume compressed U-Boot */
+			spl_image.flags |= SPL_UNPACK_IMAGE;
+			spl_image.size = CONFIG_SPL_GUNZIP_MAX_SIZE;
+			spl_image.load_addr = CONFIG_SPL_GUNZIP_LOAD_ADDR;
+			spl_image.unpack_addr = CONFIG_SYS_TEXT_BASE;
+			spl_image.entry_point = CONFIG_SYS_UBOOT_START;
+			spl_image.os = IH_OS_U_BOOT;
+			spl_image.name = "Compressed U-Boot";
+		}else{
+#endif
+			/* assume normal U-Boot */
+			spl_image.flags &= ~SPL_UNPACK_IMAGE;
+			spl_image.size = CONFIG_SYS_MONITOR_LEN;
+			spl_image.load_addr = CONFIG_SYS_TEXT_BASE;
+			spl_image.entry_point = CONFIG_SYS_UBOOT_START;
+			spl_image.os = IH_OS_U_BOOT;
+			spl_image.name = "U-Boot";
+#ifdef CONFIG_SPL_GUNZIP_SUPPORT
+		}
+#endif
 	}
 }
 
@@ -225,6 +242,18 @@ void board_init_r(gd_t *dummy1, ulong dummy2)
 		debug("SPL: Un-supported Boot Device\n");
 		hang();
 	}
+
+#ifdef CONFIG_SPL_GUNZIP_SUPPORT
+	if (spl_image.flags & SPL_UNPACK_IMAGE){
+		struct image_header *header;
+
+		gunzip(spl_image.unpack_addr, 512 * 1024,
+			spl_image.load_addr, &spl_image.size);
+
+		header = (struct image_header *)spl_image.unpack_addr;
+		spl_parse_image_header(header);
+	}
+#endif
 
 	switch (spl_image.os) {
 	case IH_OS_U_BOOT:

@@ -36,12 +36,14 @@ struct spl_image_info {
 	const char *name;
 	u8 os;
 	u32 load_addr;
+	u32 unpack_addr;
 	u32 entry_point;
 	u32 size;
 	u32 flags;
 };
 
-#define SPL_COPY_PAYLOAD_ONLY	1
+#define SPL_COPY_PAYLOAD_ONLY	0x01
+#define SPL_UNPACK_IMAGE	0x02
 
 extern struct spl_image_info spl_image;
 extern u32 *boot_params_ptr;

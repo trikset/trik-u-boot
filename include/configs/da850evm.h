@@ -165,15 +165,6 @@
 #define CONFIG_SF_DEFAULT_SPEED		30000000
 #define CONFIG_ENV_SPI_MAX_HZ	CONFIG_SF_DEFAULT_SPEED
 
-#ifdef CONFIG_USE_SPIFLASH
-#define CONFIG_SPL_SPI_SUPPORT
-#define CONFIG_SPL_SPI_FLASH_SUPPORT
-#define CONFIG_SPL_SPI_LOAD
-#define CONFIG_SPL_SPI_BUS 0
-#define CONFIG_SPL_SPI_CS 0
-#define CONFIG_SYS_SPI_U_BOOT_OFFS	0x8000
-#define CONFIG_SYS_SPI_U_BOOT_SIZE	0x30000
-#endif
 
 /*
  * I2C Configuration
@@ -384,34 +375,53 @@
 /* defines for SPL */
 #define CONFIG_SPL
 #define CONFIG_SPL_FRAMEWORK
-#define CONFIG_SPL_BOOT_DEVICE_AUTODETECT
 #define CONFIG_SPL_BOARD_INIT
+
+#define CONFIG_SPL_MAX_SIZE	49152	/* 48 Kb for spl */
+#define CONFIG_SPL_STACK	0x8001ff00
+#define CONFIG_SPL_TEXT_BASE	0x80000000
+#define CONFIG_SPL_LDSCRIPT	"board/$(BOARDDIR)/u-boot-spl-da850evm.lds"
+
+#define CONFIG_SPL_SERIAL_SUPPORT
+#define CONFIG_SPL_LIBCOMMON_SUPPORT
+#define CONFIG_SPL_LIBGENERIC_SUPPORT
 #define CONFIG_SYS_SPL_MALLOC_START	(CONFIG_SYS_TEXT_BASE - \
 						CONFIG_SYS_MALLOC_LEN)
 #define CONFIG_SYS_SPL_MALLOC_SIZE	CONFIG_SYS_MALLOC_LEN
+
+#define CONFIG_SPL_BOOT_DEVICE_AUTODETECT
+#define CONFIG_SPL_SPI_LOAD
+#define CONFIG_SPL_YMODEM_LOAD
+#define CONFIG_SPL_MMC_LOAD
+#define CONFIG_SPL_GUNZIP_SUPPORT
+
+#ifdef CONFIG_SPL_SPI_LOAD
 #define CONFIG_SPL_SPI_SUPPORT
 #define CONFIG_SPL_SPI_FLASH_SUPPORT
-#define CONFIG_SPL_SPI_LOAD
 #define CONFIG_SPL_SPI_BUS 0
 #define CONFIG_SPL_SPI_CS 0
-#define CONFIG_SPL_SERIAL_SUPPORT
-#define CONFIG_SPL_YMODEM_SUPPORT
-#define CONFIG_SPL_YMODEM_LOAD
-#define CONFIG_SPL_LIBCOMMON_SUPPORT
-#define CONFIG_SPL_LIBGENERIC_SUPPORT
-#define CONFIG_SPL_LDSCRIPT	"board/$(BOARDDIR)/u-boot-spl-da850evm.lds"
-#define CONFIG_SPL_STACK	0x8001ff00
-#define CONFIG_SPL_TEXT_BASE	0x80000000
-#define CONFIG_SPL_MAX_SIZE	32768
-#endif
+#define CONFIG_SYS_SPI_U_BOOT_OFFS	CONFIG_SPL_MAX_SIZE
+#endif /* CONFIG_SPL_SPI_LOAD */
 
-/* Load U-Boot Image From MMC */
+#ifdef CONFIG_SPL_YMODEM_LOAD
+#define CONFIG_SPL_YMODEM_SUPPORT
+#endif /* CONFIG_SPL_YMODEM_LOAD */
+
 #ifdef CONFIG_SPL_MMC_LOAD
 #define CONFIG_SPL_MMC_SUPPORT
 #define CONFIG_SPL_LIBDISK_SUPPORT
-#define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR	0x75
-#undef CONFIG_SPL_SPI_SUPPORT
-#undef CONFIG_SPL_SPI_LOAD
+#define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR	(((1 << 20) + CONFIG_SPL_MAX_SIZE) / 512)	/* Assume:                                               */
+												/*  1) standard MS-DOS partition layout                  */
+												/*  2) partitions aligned at 1Mb boundary (2048 sectors) */
+												/*  3) u-boot.ais partition start at 1Mb offset from     */
+												/*     SD/MMC card begin and at least of 256Kb long      */
+#endif /* CONFIG_SPL_MMC_LOAD */
+
+#ifdef CONFIG_SPL_GUNZIP_SUPPORT
+#define CONFIG_SPL_GUNZIP_MAX_SIZE	(100 << 10)	/* size of gzipped U-Boot: 100 Kb */
+#define CONFIG_SPL_GUNZIP_LOAD_ADDR	0xc0000000	/* shouldn't overlap with CONFIG_SYS_TEXT_BASE */
+#endif /* CONFIG_SPL_GUNZIP_SUPPORT */
+
 #endif
 
 /* additions for new relocation code, must added to all boards */
