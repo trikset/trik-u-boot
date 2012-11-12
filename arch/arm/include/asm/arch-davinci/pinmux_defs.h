@@ -24,6 +24,9 @@
 #include <asm/arch/davinci_misc.h>
 
 /* SPI pin muxer settings */
+extern const struct pinmux_config spi0_pins_base[3];
+extern const struct pinmux_config spi0_pins_scs0[1];
+extern const struct pinmux_config spi0_pins_scs1[1];
 extern const struct pinmux_config spi1_pins_base[3];
 extern const struct pinmux_config spi1_pins_scs0[1];
 
