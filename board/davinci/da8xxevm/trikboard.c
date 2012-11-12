@@ -112,8 +112,9 @@ static const struct pinmux_config trik_mmcsd0_pins[] = {
 
 const struct pinmux_resource pinmuxes[] = {
 #ifdef CONFIG_SPI_FLASH
-	PINMUX_ITEM(spi1_pins_base),
-	PINMUX_ITEM(spi1_pins_scs0),
+	PINMUX_ITEM(spi0_pins_base),
+	PINMUX_ITEM(spi0_pins_scs0),
+	PINMUX_ITEM(spi0_pins_scs1),
 #endif
 #ifdef CONFIG_MMC
 	PINMUX_ITEM(trik_mmcsd0_pins),
@@ -122,14 +123,14 @@ const struct pinmux_resource pinmuxes[] = {
 	PINMUX_ITEM(i2c0_pins),
 	PINMUX_ITEM(i2c1_pins),
 #endif
-	PINMUX_ITEM(uart0_pins_txrx),
+	PINMUX_ITEM(uart1_pins_txrx),
 };
 
 const int pinmuxes_size = ARRAY_SIZE(pinmuxes);
 
 const struct lpsc_resource lpsc[] = {
 #ifdef CONFIG_SPI_FLASH
-	{ DAVINCI_LPSC_SPI1   },	/* Serial Flash */
+	{ DAVINCI_LPSC_SPI0   },	/* Serial Flash */
 #endif
 #ifdef CONFIG_MMC
 	{ DAVINCI_LPSC_MMC_SD },
@@ -137,7 +138,7 @@ const struct lpsc_resource lpsc[] = {
 #ifdef CONFIG_HARD_I2C
 	{ DAVINCI_LPSC_I2C1   },
 #endif
-	{ DAVINCI_LPSC_UART0  },	/* console */
+	{ DAVINCI_LPSC_UART1  },	/* console */
 	{ DAVINCI_LPSC_GPIO   },
 };
 
@@ -208,8 +209,8 @@ int board_init(void)
 
 	/* setup the SUSPSRC for ARM to control emulation suspend */
 	writel(readl(&davinci_syscfg_regs->suspsrc) &
-	       ~(DAVINCI_SYSCFG_SUSPSRC_I2C | DAVINCI_SYSCFG_SUSPSRC_SPI1 |
-		 DAVINCI_SYSCFG_SUSPSRC_TIMER0 | DAVINCI_SYSCFG_SUSPSRC_UART0),
+	       ~(DAVINCI_SYSCFG_SUSPSRC_I2C | DAVINCI_SYSCFG_SUSPSRC_SPI0 |
+		 DAVINCI_SYSCFG_SUSPSRC_TIMER0 | DAVINCI_SYSCFG_SUSPSRC_UART1),
 	       &davinci_syscfg_regs->suspsrc);
 
 	/* configure pinmux settings */

@@ -67,8 +67,8 @@
 
 #define CONFIG_SYS_DA850_SYSCFG_SUSPSRC (	\
 	DAVINCI_SYSCFG_SUSPSRC_TIMER0 |		\
-	DAVINCI_SYSCFG_SUSPSRC_SPI1 |		\
-	DAVINCI_SYSCFG_SUSPSRC_UART0 |		\
+	DAVINCI_SYSCFG_SUSPSRC_SPI0 |		\
+	DAVINCI_SYSCFG_SUSPSRC_UART1 |		\
 	DAVINCI_SYSCFG_SUSPSRC_I2C)
 
 
@@ -191,18 +191,18 @@
 #define CONFIG_SYS_NS16550
 #define CONFIG_SYS_NS16550_SERIAL
 #define CONFIG_SYS_NS16550_REG_SIZE	-4	/* NS16550 register size */
-#define CONFIG_SYS_NS16550_COM1	DAVINCI_UART0_BASE /* Base address of UART0 */
-#define CONFIG_SYS_NS16550_CLK	clk_get(DAVINCI_UART0_CLKID)
-#define CONFIG_CONS_INDEX	1		/* use UART0 for console */
+#define CONFIG_SYS_NS16550_COM1	DAVINCI_UART1_BASE /* Base address of UART1 */
+#define CONFIG_SYS_NS16550_CLK	clk_get(DAVINCI_UART1_CLKID)
+#define CONFIG_CONS_INDEX	1		/* use UART1 for console */
 #define CONFIG_BAUDRATE		115200		/* Default baud rate */
 #define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
 
 #define CONFIG_SPI
 #define CONFIG_SPI_FLASH
-#define CONFIG_SPI_FLASH_SST25L
+#define CONFIG_SPI_FLASH_STMICRO
 #define CONFIG_DAVINCI_SPI
-#define CONFIG_SYS_SPI_BASE		DAVINCI_SPI1_BASE
-#define CONFIG_SYS_SPI_CLK		clk_get(DAVINCI_SPI1_CLKID)
+#define CONFIG_SYS_SPI_BASE		DAVINCI_SPI0_BASE
+#define CONFIG_SYS_SPI_CLK		clk_get(DAVINCI_SPI0_CLKID)
 #define CONFIG_SF_DEFAULT_SPEED		30000000
 #define CONFIG_ENV_SPI_MAX_HZ	CONFIG_SF_DEFAULT_SPEED
 
@@ -217,6 +217,23 @@
 #define CONFIG_CMD_MMC
 
 /*
+ * USB configuration
+ */
+#define CONFIG_USB_DA8XX	/* Platform hookup to MUSB controller */
+#define CONFIG_MUSB_HCD		/* include support for usb host */
+#define CONFIG_CMD_USB		/* include support for usb cmd */
+
+#define CONFIG_USB_STORAGE	/* MSC class support */
+#define CONFIG_CMD_STORAGE	/* inclue support for usb-storage cmd */
+#define CONFIG_CMD_FAT		/* inclue support for FAT/storage */
+#define CONFIG_DOS_PARTITION	/* inclue support for FAT/storage */
+
+#ifdef CONFIG_USB_KEYBOARD	/* HID class support */
+#define CONFIG_SYS_USB_EVENT_POLL
+#define CONFIG_PREBOOT "usb start"
+#endif /* CONFIG_USB_KEYBOARD */
+
+/*
  * I2C Configuration
  */
 #define CONFIG_HARD_I2C
@@ -226,12 +243,10 @@
 #define CONFIG_SYS_I2C_EXPANDER_ADDR	0x20
 
 #ifdef CONFIG_USE_SPIFLASH
-#undef CONFIG_ENV_IS_IN_FLASH
-#undef CONFIG_ENV_IS_IN_NAND
 #define CONFIG_ENV_IS_IN_SPI_FLASH
-#define CONFIG_ENV_SECT_SIZE		(4 << 10)
+#define CONFIG_ENV_SECT_SIZE		(64 << 10)
 #define CONFIG_ENV_SIZE			CONFIG_ENV_SECT_SIZE
-#define CONFIG_ENV_OFFSET		(120 << 10)	/* we have 128Kb flash */
+#define CONFIG_ENV_OFFSET		(256 << 10)
 #define CONFIG_SYS_NO_FLASH
 #endif
 
@@ -249,8 +264,8 @@
 #define CONFIG_SYS_LOAD_ADDR	(PHYS_SDRAM_1 + 0x700000)
 #define CONFIG_VERSION_VARIABLE
 #define CONFIG_AUTO_COMPLETE
-/* #define CONFIG_SYS_HUSH_PARSER */
-/* #define CONFIG_SYS_PROMPT_HUSH_PS2	"> " */
+#define CONFIG_SYS_HUSH_PARSER
+#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 #define CONFIG_CMDLINE_EDITING
 #define CONFIG_SYS_LONGHELP
 #define CONFIG_CRC32_VERIFY
@@ -265,7 +280,7 @@
 #define CONFIG_REVISION_TAG
 #define CONFIG_SETUP_MEMORY_TAGS
 #define CONFIG_BOOTARGS		\
-	"mem=64M console=ttyS0,115200n8 rw noinitrd earlyprintk rootwait root=/dev/mmcblk0p2"
+	"mem=64M console=ttyS1,115200n8 rw noinitrd earlyprintk rootwait root=/dev/mmcblk0p2"
 #define CONFIG_BOOTDELAY	3
 #define CONFIG_EXTRA_ENV_SETTINGS	"hwconfig=dsp:wake=yes"
 
@@ -289,51 +304,55 @@
 #define CONFIG_CMD_SAVEENV
 #endif
 
-#if !defined(CONFIG_USE_NAND) && \
-	!defined(CONFIG_USE_NOR) && \
-	!defined(CONFIG_USE_SPIFLASH)
-#define CONFIG_ENV_IS_NOWHERE
-#define CONFIG_SYS_NO_FLASH
-#define CONFIG_ENV_SIZE		(16 << 10)
-#undef CONFIG_CMD_IMLS
-#undef CONFIG_CMD_ENV
-#endif
-
 /* defines for SPL */
 #define CONFIG_SPL
-#define CONFIG_SPL_LDSCRIPT		"board/$(BOARDDIR)/u-boot-spl-trik.lds"
-#define CONFIG_SPL_STACK		0x8001ff00
-#define CONFIG_SPL_TEXT_BASE		0x80000000
-#define CONFIG_SYS_SPL_MALLOC_START	(CONFIG_SYS_TEXT_BASE - CONFIG_SYS_MALLOC_LEN)
-#define CONFIG_SYS_SPL_MALLOC_SIZE	CONFIG_SYS_MALLOC_LEN
-#define CONFIG_SPL_MAX_SIZE		45056	/* 44 Kb for spl */
+#define CONFIG_SPL_FRAMEWORK
+#define CONFIG_SPL_BOARD_INIT
+
+#define CONFIG_SPL_MAX_SIZE	49152	/* 48 Kb for spl */
+#define CONFIG_SPL_STACK	0x8001ff00
+#define CONFIG_SPL_TEXT_BASE	0x80000000
+#define CONFIG_SPL_LDSCRIPT	"board/$(BOARDDIR)/u-boot-spl-trik.lds"
+
+#define CONFIG_SPL_SERIAL_SUPPORT
 #define CONFIG_SPL_LIBCOMMON_SUPPORT
 #define CONFIG_SPL_LIBGENERIC_SUPPORT
-#define CONFIG_SPL_SERIAL_SUPPORT
+#define CONFIG_SYS_SPL_MALLOC_START	(CONFIG_SYS_TEXT_BASE - \
+						CONFIG_SYS_MALLOC_LEN)
+#define CONFIG_SYS_SPL_MALLOC_SIZE	CONFIG_SYS_MALLOC_LEN
+
+#define CONFIG_SPL_BOOT_DEVICE_AUTODETECT
+#define CONFIG_SPL_SPI_LOAD
+#define CONFIG_SPL_YMODEM_LOAD
+#define CONFIG_SPL_MMC_LOAD
 #define CONFIG_SPL_GUNZIP_SUPPORT
-#define CONFIG_SPL_GUNZIP_MAX_SIZE	(76 << 10)	/* 128 Kb - spl_size - 2 * env_size */
-#define CONFIG_SPL_GUNZIP_LOAD_ADDR	0xc0000000
-#if 1
-  #define CONFIG_SPL_YMODEM_SUPPORT
-#endif
-#if 1
-  #define CONFIG_SPL_SPI_SUPPORT
-  #define CONFIG_SPL_SPI_FLASH_SUPPORT
-  #define CONFIG_SPL_SPI_BUS 0
-  #define CONFIG_SPL_SPI_CS 0
-  #define CONFIG_SYS_SPI_U_BOOT_OFFS	CONFIG_SPL_MAX_SIZE
-  #define CONFIG_SYS_SPI_U_BOOT_SIZE	CONFIG_SPL_GUNZIP_MAX_SIZE
-#endif
-#if 1
-  #define CONFIG_SPL_MMC_SUPPORT
-  #define CONFIG_SPL_LIBDISK_SUPPORT
-  #define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR	(((1 << 20) + CONFIG_SPL_MAX_SIZE) / 512)	/* Assume:                                                */
-													/*  1) standard MS-DOS partition layout                   */
-													/*  2) partitions aligned at 1Mb boundary (2048 sectors)  */
-													/*  3) u-boot-gzip.ais partition start at 1Mb offset from */
-													/*     SD/MMC card begin and at least of 128Kb long       */
-  #define CONFIG_SYS_U_BOOT_MAX_SIZE_SECTORS		((CONFIG_SPL_GUNZIP_MAX_SIZE + 511) / 512)
-#endif
+
+#ifdef CONFIG_SPL_SPI_LOAD
+#define CONFIG_SPL_SPI_SUPPORT
+#define CONFIG_SPL_SPI_FLASH_SUPPORT
+#define CONFIG_SPL_SPI_BUS 0
+#define CONFIG_SPL_SPI_CS 0
+#define CONFIG_SYS_SPI_U_BOOT_OFFS	CONFIG_SPL_MAX_SIZE
+#endif /* CONFIG_SPL_SPI_LOAD */
+
+#ifdef CONFIG_SPL_YMODEM_LOAD
+#define CONFIG_SPL_YMODEM_SUPPORT
+#endif /* CONFIG_SPL_YMODEM_LOAD */
+
+#ifdef CONFIG_SPL_MMC_LOAD
+#define CONFIG_SPL_MMC_SUPPORT
+#define CONFIG_SPL_LIBDISK_SUPPORT
+#define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR	(((1 << 20) + CONFIG_SPL_MAX_SIZE) / 512)	/* Assume:                                               */
+												/*  1) standard MS-DOS partition layout                  */
+												/*  2) partitions aligned at 1Mb boundary (2048 sectors) */
+												/*  3) u-boot.ais partition start at 1Mb offset from     */
+												/*     SD/MMC card begin and at least of 256Kb long      */
+#endif /* CONFIG_SPL_MMC_LOAD */
+
+#ifdef CONFIG_SPL_GUNZIP_SUPPORT
+#define CONFIG_SPL_GUNZIP_MAX_SIZE	(100 << 10)	/* size of gzipped U-Boot: 100 Kb */
+#define CONFIG_SPL_GUNZIP_LOAD_ADDR	0xc0000000	/* shouldn't overlap with CONFIG_SYS_TEXT_BASE */
+#endif /* CONFIG_SPL_GUNZIP_SUPPORT */
 
 /* additions for new relocation code, must added to all boards */
 #define CONFIG_SYS_SDRAM_BASE		0xc0000000
