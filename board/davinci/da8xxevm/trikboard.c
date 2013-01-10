@@ -220,7 +220,7 @@ int board_init(void)
 	/* enable the console UART */
 	writel((DAVINCI_UART_PWREMU_MGMT_FREE | DAVINCI_UART_PWREMU_MGMT_URRST |
 		DAVINCI_UART_PWREMU_MGMT_UTRST),
-	       &davinci_uart0_ctrl_regs->pwremu_mgmt);
+	       &davinci_uart1_ctrl_regs->pwremu_mgmt);
 
 	return 0;
 }
