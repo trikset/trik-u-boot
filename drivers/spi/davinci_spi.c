@@ -31,6 +31,10 @@
 #include <asm/arch/hardware.h>
 #include "davinci_spi.h"
 
+#define CTRL_CS_ENABLE  1
+#define CTRL_CS_LAST    2
+#define CTRL_CS_DISABLE 3
+
 void spi_init()
 {
 	/* do nothing */
@@ -50,7 +54,14 @@ struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs,
 
 	ds->slave.bus = bus;
 	ds->slave.cs = cs;
+#ifdef CONFIG_SYS_SPI1_BASE
+	switch (bus) {
+		case 0:	ds->regs = (struct davinci_spi_regs *)CONFIG_SYS_SPI_BASE;	break;
+		case 1:	ds->regs = (struct davinci_spi_regs *)CONFIG_SYS_SPI1_BASE;	break;
+	}
+#else
 	ds->regs = (struct davinci_spi_regs *)CONFIG_SYS_SPI_BASE;
+#endif
 	ds->freq = max_hz;
 
 	return &ds->slave;
@@ -101,7 +112,7 @@ int spi_claim_bus(struct spi_slave *slave)
 		(50 << SPI_T2CDELAY_SHIFT), &ds->regs->delay);
 
 	/* default chip select register */
-	writel(SPIDEF_CSDEF0_MASK, &ds->regs->def);
+	writel(SPIDEF_CSDEF_MASK, &ds->regs->def);
 
 	/* no interrupts */
 	writel(0, &ds->regs->int0);
@@ -121,53 +132,91 @@ void spi_release_bus(struct spi_slave *slave)
 	writel(SPIGCR0_SPIRST_MASK, &ds->regs->gcr0);
 }
 
+static inline void davinci_spi_wait_tx_deasserted(struct davinci_spi_slave *ds)
+{
+	/* wait till TXFULL is deasserted */
+	while (readl(&ds->regs->buf) & SPIBUF_TXFULL_MASK)
+		;
+}
+
 /*
  * This functions needs to act like a macro to avoid pipeline reloads in the
  * loops below. Use always_inline. This gains us about 160KiB/s and the bloat
  * appears to be zero bytes (da830).
  */
 __attribute__((always_inline))
-static inline u32 davinci_spi_xfer_data(struct davinci_spi_slave *ds, u32 data)
+static inline u32 davinci_spi_xfer_data(struct davinci_spi_slave *ds, u32 dat1_reg_hdr, u32 data)
 {
-	u32	buf_reg_val;
+	u32	read_reg_val;
 
 	/* send out data */
-	writel(data, &ds->regs->dat1);
+	writel((dat1_reg_hdr|data), &ds->regs->dat1);
 
 	/* wait for the data to clock in/out */
-	while ((buf_reg_val = readl(&ds->regs->buf)) & SPIBUF_RXEMPTY_MASK)
+	while ((read_reg_val = readl(&ds->regs->buf)) & SPIBUF_RXEMPTY_MASK)
 		;
 
-	return buf_reg_val;
+	return read_reg_val;
+}
+
+static inline void davinci_spi_cs_control(struct spi_slave* slave, unsigned state, u32* dat1_reg_hdr)
+{
+	if (slave->cs < CONFIG_DAVINCI_SPI_CS) {
+		switch (state) {
+			case CTRL_CS_ENABLE: /* enable CS hold and CS[n] */
+				*dat1_reg_hdr |=  (1u << SPIDAT1_CSHOLD_SHIFT);
+				*dat1_reg_hdr &= ~(1u << (SPIDAT1_CSNR_SHIFT + slave->cs));
+				return;
+			case CTRL_CS_LAST: /* clear CS hold when we reach the end */
+				*dat1_reg_hdr &= ~(1u << SPIDAT1_CSHOLD_SHIFT);
+				return;
+			case CTRL_CS_DISABLE: /* clear CS hold and CS[n] */
+				*dat1_reg_hdr &= ~(1u << SPIDAT1_CSHOLD_SHIFT);
+				*dat1_reg_hdr |=  (1u << (SPIDAT1_CSNR_SHIFT + slave->cs));
+				return;
+		}
+	} else {
+		switch (state) {
+			case CTRL_CS_ENABLE: /* enable CS */
+				spi_cs_activate(slave);
+				return;
+			case CTRL_CS_LAST:
+				return;
+			case CTRL_CS_DISABLE: /* clear CS */
+				spi_cs_deactivate(slave);
+				return;
+		}
+	}
+
+	printf("Unsupported spi state or cs\n");
 }
 
 static int davinci_spi_read(struct spi_slave *slave, unsigned int len,
 			    u8 *rxp, unsigned long flags)
 {
 	struct davinci_spi_slave *ds = to_davinci_spi(slave);
-	unsigned int data1_reg_val;
+	u32 dat1_reg_hdr = SPIDAT1_DEFAULT;
 
-	/* enable CS hold, CS[n] and clear the data bits */
-	data1_reg_val = ((1 << SPIDAT1_CSHOLD_SHIFT) |
-			 (slave->cs << SPIDAT1_CSNR_SHIFT));
+	davinci_spi_cs_control(slave, CTRL_CS_ENABLE, &dat1_reg_hdr);
 
-	/* wait till TXFULL is deasserted */
-	while (readl(&ds->regs->buf) & SPIBUF_TXFULL_MASK)
-		;
+	davinci_spi_wait_tx_deasserted(ds);
 
 	/* preload the TX buffer to avoid clock starvation */
-	writel(data1_reg_val, &ds->regs->dat1);
+	writel(dat1_reg_hdr, &ds->regs->dat1);
 
 	/* keep reading 1 byte until only 1 byte left */
 	while ((len--) > 1)
-		*rxp++ = davinci_spi_xfer_data(ds, data1_reg_val);
+		*rxp++ = davinci_spi_xfer_data(ds, dat1_reg_hdr, 0);
 
 	/* clear CS hold when we reach the end */
 	if (flags & SPI_XFER_END)
-		data1_reg_val &= ~(1 << SPIDAT1_CSHOLD_SHIFT);
+		davinci_spi_cs_control(slave, CTRL_CS_LAST, &dat1_reg_hdr);
 
 	/* read the last byte */
-	*rxp = davinci_spi_xfer_data(ds, data1_reg_val);
+	*rxp = davinci_spi_xfer_data(ds, dat1_reg_hdr, 0);
+
+	if (flags & SPI_XFER_END)
+		davinci_spi_cs_control(slave, CTRL_CS_DISABLE, &dat1_reg_hdr);
 
 	return 0;
 }
@@ -176,32 +225,31 @@ static int davinci_spi_write(struct spi_slave *slave, unsigned int len,
 			     const u8 *txp, unsigned long flags)
 {
 	struct davinci_spi_slave *ds = to_davinci_spi(slave);
-	unsigned int data1_reg_val;
+	u32 dat1_reg_hdr = SPIDAT1_DEFAULT;
 
-	/* enable CS hold and clear the data bits */
-	data1_reg_val = ((1 << SPIDAT1_CSHOLD_SHIFT) |
-			 (slave->cs << SPIDAT1_CSNR_SHIFT));
+	davinci_spi_cs_control(slave, CTRL_CS_ENABLE, &dat1_reg_hdr);
 
-	/* wait till TXFULL is deasserted */
-	while (readl(&ds->regs->buf) & SPIBUF_TXFULL_MASK)
-		;
+	davinci_spi_wait_tx_deasserted(ds);
 
 	/* preload the TX buffer to avoid clock starvation */
 	if (len > 2) {
-		writel(data1_reg_val | *txp++, &ds->regs->dat1);
+		writel(dat1_reg_hdr | *txp++, &ds->regs->dat1);
 		len--;
 	}
 
 	/* keep writing 1 byte until only 1 byte left */
 	while ((len--) > 1)
-		davinci_spi_xfer_data(ds, data1_reg_val | *txp++);
+		davinci_spi_xfer_data(ds, dat1_reg_hdr, *txp++);
 
 	/* clear CS hold when we reach the end */
 	if (flags & SPI_XFER_END)
-		data1_reg_val &= ~(1 << SPIDAT1_CSHOLD_SHIFT);
+		davinci_spi_cs_control(slave, CTRL_CS_LAST, &dat1_reg_hdr);
 
 	/* write the last byte */
-	davinci_spi_xfer_data(ds, data1_reg_val | *txp);
+	davinci_spi_xfer_data(ds, dat1_reg_hdr, *txp);
+
+	if (flags & SPI_XFER_END)
+		davinci_spi_cs_control(slave, CTRL_CS_DISABLE, &dat1_reg_hdr);
 
 	return 0;
 }
@@ -211,26 +259,25 @@ static int davinci_spi_read_write(struct spi_slave *slave, unsigned int len,
 				  u8 *rxp, const u8 *txp, unsigned long flags)
 {
 	struct davinci_spi_slave *ds = to_davinci_spi(slave);
-	unsigned int data1_reg_val;
+	u32 dat1_reg_hdr = SPIDAT1_DEFAULT;
 
-	/* enable CS hold and clear the data bits */
-	data1_reg_val = ((1 << SPIDAT1_CSHOLD_SHIFT) |
-			 (slave->cs << SPIDAT1_CSNR_SHIFT));
+	davinci_spi_cs_control(slave, CTRL_CS_ENABLE, &dat1_reg_hdr);
 
-	/* wait till TXFULL is deasserted */
-	while (readl(&ds->regs->buf) & SPIBUF_TXFULL_MASK)
-		;
+	davinci_spi_wait_tx_deasserted(ds);
 
 	/* keep reading and writing 1 byte until only 1 byte left */
 	while ((len--) > 1)
-		*rxp++ = davinci_spi_xfer_data(ds, data1_reg_val | *txp++);
+		*rxp++ = davinci_spi_xfer_data(ds, dat1_reg_hdr, *txp++);
 
 	/* clear CS hold when we reach the end */
 	if (flags & SPI_XFER_END)
-		data1_reg_val &= ~(1 << SPIDAT1_CSHOLD_SHIFT);
+		davinci_spi_cs_control(slave, CTRL_CS_LAST, &dat1_reg_hdr);
 
 	/* read and write the last byte */
-	*rxp = davinci_spi_xfer_data(ds, data1_reg_val | *txp);
+	*rxp = davinci_spi_xfer_data(ds, dat1_reg_hdr, *txp);
+
+	if (flags & SPI_XFER_END)
+		davinci_spi_cs_control(slave, CTRL_CS_DISABLE, &dat1_reg_hdr);
 
 	return 0;
 }
@@ -280,16 +327,23 @@ out:
 	return 0;
 }
 
+__attribute__((weak))
 int spi_cs_is_valid(unsigned int bus, unsigned int cs)
 {
-	return bus == 0 && cs == 0;
+#ifdef CONFIG_SYS_SPI1_BASE
+	return (bus == 0 || bus == 1) && cs < CONFIG_DAVINCI_SPI_CS;
+#else
+	return bus == 0 && cs < CONFIG_DAVINCI_SPI_CS;
+#endif
 }
 
+__attribute__((weak))
 void spi_cs_activate(struct spi_slave *slave)
 {
 	/* do nothing */
 }
 
+__attribute__((weak))
 void spi_cs_deactivate(struct spi_slave *slave)
 {
 	/* do nothing */

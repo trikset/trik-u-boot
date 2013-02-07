@@ -14,7 +14,6 @@
 #include <watchdog.h>
 
 #include "spi_flash_internal.h"
-
 static void spi_flash_addr(u32 addr, u8 *cmd)
 {
 	/* cmd[0] is actual command */
@@ -406,3 +405,4 @@ void spi_flash_free(struct spi_flash *flash)
 	spi_free_slave(flash->spi);
 	free(flash);
 }
+

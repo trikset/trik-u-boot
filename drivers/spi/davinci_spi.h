@@ -22,6 +22,11 @@
 #ifndef _DAVINCI_SPI_H_
 #define _DAVINCI_SPI_H_
 
+#ifndef CONFIG_DAVINCI_SPI_CS
+#define CONFIG_DAVINCI_SPI_CS 1
+#endif
+
+
 struct davinci_spi_regs {
 	dv_reg	gcr0;		/* 0x00 */
 	dv_reg	gcr1;		/* 0x04 */
@@ -75,6 +80,7 @@ struct davinci_spi_regs {
 /* SPIDAT1 */
 #define SPIDAT1_CSHOLD_SHIFT	28
 #define SPIDAT1_CSNR_SHIFT	16
+#define SPIDAT1_DEFAULT		(((1u<<CONFIG_DAVINCI_SPI_CS)-1)<<SPIDAT1_CSNR_SHIFT)
 
 /* SPIDELAY */
 #define SPI_C2TDELAY_SHIFT	24
@@ -85,7 +91,8 @@ struct davinci_spi_regs {
 #define SPIBUF_TXFULL_MASK	BIT(29)
 
 /* SPIDEF */
-#define SPIDEF_CSDEF0_MASK	BIT(0)
+#define SPIDEF_CSDEF_SHIFT	0
+#define SPIDEF_CSDEF_MASK	(((1u<<CONFIG_DAVINCI_SPI_CS)-1)<<SPIDEF_CSDEF_SHIFT)
 
 struct davinci_spi_slave {
 	struct spi_slave slave;
