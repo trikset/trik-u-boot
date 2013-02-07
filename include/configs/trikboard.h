@@ -279,6 +279,8 @@
 #define CONFIG_SETUP_MEMORY_TAGS
 #define CONFIG_BOOTARGS		\
 	"mem=64M console=ttyS1,115200n8 rw noinitrd rootwait root=/dev/mmcblk0p2"
+#define CONFIG_EXTRABOOTARGS	\
+	"vt.global_cursor_default=0 consoleblank=0"
 #define CONFIG_BOOTDELAY	3
 #define CONFIG_EXTRA_ENV_SETTINGS	"hwconfig=dsp:wake=yes"
 

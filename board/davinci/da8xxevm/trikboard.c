@@ -97,6 +97,15 @@ int misc_init_r(void)
 	dspwake();
 	return 0;
 }
+static const struct pinmux_config trik_gpio_keys_pins[] = {
+	{ pinmux(8), 8, 3 }, /*GPIO3[4]*/ 
+	{ pinmux(7), 8, 3 }, /*GPIO3[12]*/
+	{ pinmux(7), 8, 2 }, /*GPIO3[13]*/
+	{ pinmux(7), 8, 1 }, /*GPIO3[14]*/
+	{ pinmux(7), 8, 0 }, /*GPIO3[15]*/
+	{ pinmux(6), 8, 7 }, /*GPIO2[0]*/
+	{ pinmux(11), 8, 7 }, /*GPIO5[8]*/
+};
 
 #ifdef CONFIG_MMC
 static const struct pinmux_config trik_mmcsd0_pins[] = {
@@ -124,6 +133,9 @@ const struct pinmux_resource pinmuxes[] = {
 	PINMUX_ITEM(i2c1_pins),
 #endif
 	PINMUX_ITEM(uart1_pins_txrx),
+#ifdef COMFIG_GPIO_BUTTON
+	PINMUX_ITEM(trik_gpio_keys_pins),
+#endif
 };
 
 const int pinmuxes_size = ARRAY_SIZE(pinmuxes);
