@@ -253,8 +253,8 @@ int board_init(void)
 	LED_GPIO_BANK->dir &= ~LED_RED_GPIO;
         LED_GPIO_BANK->set_data |= LED_RED_GPIO;
 
-	BACK_LIGHT_GPIO_BANK->dir &= ~BACK_LIGHT_GPIO;
-	BACK_LIGHT_GPIO_BANK->set_data |= BACK_LIGHT_GPIO;
+//	BACK_LIGHT_GPIO_BANK->dir &= ~BACK_LIGHT_GPIO;
+//	BACK_LIGHT_GPIO_BANK->set_data |= BACK_LIGHT_GPIO;
 	return 0;
 }
 
