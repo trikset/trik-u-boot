@@ -30,6 +30,8 @@
 #include <asm/arch/pinmux_defs.h>
 #include <asm/io.h>
 #include <asm/arch/davinci_misc.h>
+#include <asm/arch-davinci/gpio.h>
+
 #include <asm/errno.h>
 #include <hwconfig.h>
 #ifdef CONFIG_MMC
@@ -101,12 +103,21 @@ static const struct pinmux_config trik_gpio_keys_pins[] = {
 	{ pinmux(8), 8, 3 }, /*GPIO3[4]*/ 
 	{ pinmux(7), 8, 3 }, /*GPIO3[12]*/
 	{ pinmux(7), 8, 2 }, /*GPIO3[13]*/
-	{ pinmux(7), 8, 1 }, /*GPIO3[14]*/
 	{ pinmux(7), 8, 0 }, /*GPIO3[15]*/
 	{ pinmux(6), 8, 7 }, /*GPIO2[0]*/
-	{ pinmux(11), 8, 7 }, /*GPIO5[8]*/
+	/*LEDS*/
 };
+#define LED_GPIO_BANK	(davinci_gpio_bank45)
+#define LED_GREEN_GPIO	(1u << (0x10 + 8))
+#define LED_RED_GPIO	(1u << (0x10 + 7))
 
+#define BACK_LIGHT_GPIO_BANK (davinci_gpio_bank67)
+#define BACK_LIGHT_GPIO	(1u << (0x0c))
+static const struct pinmux_config trik_gpio_leds_pins[] = {
+	{ pinmux(11), 8, 7 }, /*GPIO5[8] green */
+	{ pinmux(12), 8, 0 }, /*GPIO5[7] red */ 
+	{ pinmux(13), 8, 3 },/*GPIO6[12] Back_light*/
+};
 #ifdef CONFIG_MMC
 static const struct pinmux_config trik_mmcsd0_pins[] = {
 	{ pinmux(10), 8, 6 }, /* GP4[1] - insert/remove pin */
@@ -133,6 +144,7 @@ const struct pinmux_resource pinmuxes[] = {
 	PINMUX_ITEM(i2c1_pins),
 #endif
 	PINMUX_ITEM(uart1_pins_txrx),
+	PINMUX_ITEM(trik_gpio_leds_pins),
 #ifdef COMFIG_GPIO_BUTTON
 	PINMUX_ITEM(trik_gpio_keys_pins),
 #endif
@@ -233,7 +245,16 @@ int board_init(void)
 	writel((DAVINCI_UART_PWREMU_MGMT_FREE | DAVINCI_UART_PWREMU_MGMT_URRST |
 		DAVINCI_UART_PWREMU_MGMT_UTRST),
 	       &davinci_uart1_ctrl_regs->pwremu_mgmt);
+	/* Set red diod */
 
+	LED_GPIO_BANK->dir &= ~LED_GREEN_GPIO;
+	LED_GPIO_BANK->clr_data |= LED_GREEN_GPIO;
+
+	LED_GPIO_BANK->dir &= ~LED_RED_GPIO;
+        LED_GPIO_BANK->set_data |= LED_RED_GPIO;
+
+	BACK_LIGHT_GPIO_BANK->dir &= ~BACK_LIGHT_GPIO;
+	BACK_LIGHT_GPIO_BANK->set_data |= BACK_LIGHT_GPIO;
 	return 0;
 }
 
