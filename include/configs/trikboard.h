@@ -50,7 +50,7 @@
  */
 #define CONFIG_SYS_MALLOC_LEN	(0x10000 + 1*1024*1024) /* malloc() len */
 #define PHYS_SDRAM_1		DAVINCI_DDR_EMIF_DATA_BASE /* DDR Start */
-#define PHYS_SDRAM_1_SIZE	(128 << 20) /* SDRAM size 128MB */
+#define PHYS_SDRAM_1_SIZE	(256 << 20) /* SDRAM size 256MB */
 #define CONFIG_MAX_RAM_BANK_SIZE (512 << 20) /* max size from SPRS586*/
 
 /* memtest start addr */
@@ -98,13 +98,13 @@
  * DDR:  SDRAMEN = 1, MSDRAMEN = 0, DDREN = 1, DDR2EN = 1
  * mDDR: SDRAMEN = 1, MSDRAMEN = 1, DDREN = 1, DDR2EN = 0
  *
- * Micron mt47h32m16hr-25e
+ * Micron mt47h128m16rt-25eit
  * --------------------------------------------------------
  *               specs           SDBCR value
  * --------------------------------------------------------
  * type          DDR             SDRAMEN = 1, MSDRAMEN = 0,
  *                               DDREN = 1, DDR2EN = 1
- * IBANKS        4               0x02
+ * IBANKS        8               0x03
  * PAGESIZE      8192 (13 bits)  0x02
  * CAS_LATENCY   3..6            0x03..0x06
  * --------------------------------------------------------
@@ -117,7 +117,7 @@
 	(1 << DV_DDR_SDCR_SDRAMEN_SHIFT)   |	\
 	(1 << DV_DDR_SDCR_BUS_WIDTH_SHIFT) |	\
 	(0x3 << DV_DDR_SDCR_CL_SHIFT)      |	\
-	(0x2 << DV_DDR_SDCR_IBANK_SHIFT)   |	\
+	(0x3 << DV_DDR_SDCR_IBANK_SHIFT)   |	\
 	(0x2 << DV_DDR_SDCR_PAGESIZE_SHIFT))
 
 /*
@@ -141,8 +141,8 @@
 #define DDR_REFRESH_RATE	((DDR_CLK_MHZ*1000*64)/8192)
 
 
-/* Micron mt47h32m16hr-25e */
-#define DDR_T_RFC	DDR_TIMING(127.5)
+/* Micron mt47h128m16rt-25eit */
+#define DDR_T_RFC	DDR_TIMING(195)
 #define DDR_T_RP	DDR_TIMING(12.5)
 #define DDR_T_RCD	DDR_TIMING(12.5)
 #define DDR_T_WR	DDR_TIMING(15)
@@ -154,7 +154,7 @@
 #define DDR_T_RASMAX	DDR_RASMAX(70000)
 #define DDR_T_XP	(3-1)		/* max(t_xp,t_cke)/t_ck - 1 */
 #define DDR_T_ODT	0		/* not connected */
-#define DDR_T_XSNR	DDR_TIMING(160)	/* t_RFC + 10 */
+#define DDR_T_XSNR	DDR_TIMING(230)	/* lower limit is t_RFC + 10  */
 #define DDR_T_XSRD	(200-1)		/* t_XSRD/t_ck - 1 */
 #define DDR_T_RTP	(DDR_TIMING(7.5)+1)
 #define DDR_T_CKE	(3-1)		/* t_cke/t_ck-1 */
@@ -280,7 +280,7 @@
 #define CONFIG_REVISION_TAG
 #define CONFIG_SETUP_MEMORY_TAGS
 #define CONFIG_BOOTARGS		\
-	"mem=64M console=ttyS1,115200n8 rw noinitrd rootwait root=/dev/mmcblk0p2"
+	"mem=256M console=ttyS1,115200n8 rw noinitrd rootwait root=/dev/mmcblk0p2"
 #define CONFIG_EXTRA_BOOTARGS   \
 	"vt.global_cursor_default=0 consoleblank=0"
 #define CONFIG_BOOTDELAY	3
