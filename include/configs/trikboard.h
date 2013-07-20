@@ -282,8 +282,10 @@
 #define CONFIG_BOOTARGS		\
 	"mem=256M console=ttyS1,115200n8 rw noinitrd rootwait root=/dev/mmcblk0p2"
 #define CONFIG_EXTRA_BOOTARGS   \
-	"vt.global_cursor_default=0 consoleblank=0"
-#define CONFIG_BOOTDELAY	3
+	"vt.global_cursor_default=0 consoleblank=0 "
+#define CONFIG_BOOTCOMMAND \
+	"mmc dev; ext4load mmc 0:2 0xc0700000 /boot/uImage; bootm; "
+#define CONFIG_BOOTDELAY	1
 #define CONFIG_EXTRA_ENV_SETTINGS	\
 		"hwconfig=dsp:wake=yes\0" \
 		"extrabootargs="CONFIG_EXTRA_BOOTARGS"\0"
