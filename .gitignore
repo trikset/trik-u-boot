@@ -38,12 +38,14 @@
 /u-boot.sha1
 /u-boot.dis
 /u-boot.lds
+/u-boot.lst
 /u-boot.ubl
 /u-boot.ais
 /u-boot.dtb
 /u-boot.sb
 /u-boot.geany
-/include/u-boot.lst
+/u-boot.bin.gz
+/u-boot-gzip.ais
 
 #
 # Generated files
@@ -78,3 +80,5 @@ cscope.*
 
 # spl ais files
 /spl/*.ais
+
+/include/u-boot.lst
