@@ -280,7 +280,7 @@
 #define CONFIG_REVISION_TAG
 #define CONFIG_SETUP_MEMORY_TAGS
 #define CONFIG_BOOTARGS		\
-	"mem=256M console=ttyS1,115200n8 rw noinitrd rootwait root=/dev/mmcblk0p2 vt.global_cursor_default=0 consoleblank=0 trik.jcx=ecap "
+	"mem=128M console=ttyS1,115200n8 rw noinitrd rootwait root=/dev/mmcblk0p2 vt.global_cursor_default=0 consoleblank=0 trik.jcx=ecap "
 #define CONFIG_EXTRA_BOOTARGS   \
 	"vt.global_cursor_default=0 consoleblank=0 "
 #define CONFIG_BOOTCOMMAND \
