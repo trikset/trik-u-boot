@@ -256,7 +256,7 @@
 #define CONFIG_MISC_INIT_R
 #define CONFIG_BOARD_EARLY_INIT_F
 #define CONFIG_BOOTFILE		"uImage" /* Boot file name */
-#define CONFIG_SYS_PROMPT	"trikboard > " /* Command Prompt */
+#define CONFIG_SYS_PROMPT	"trik2017 > " /* Command Prompt */
 #define CONFIG_SYS_CBSIZE	1024 /* Console I/O Buffer Size	*/
 #define CONFIG_SYS_PBSIZE	(CONFIG_SYS_CBSIZE+sizeof(CONFIG_SYS_PROMPT)+16)
 #define CONFIG_SYS_MAXARGS	16 /* max number of command args */
@@ -270,6 +270,8 @@
 #define CONFIG_SYS_LONGHELP
 #define CONFIG_CRC32_VERIFY
 #define CONFIG_MX_CYCLIC
+#define CONFIG_PREBOOT "if fatload mmc 0:1 0xC0700000 /u-boot.run || ext4load mmc 0:2 0xC0700000 /u-boot.run ; then source  0xC0700000; fi"
+
 
 /*
  * Linux Information
@@ -288,7 +290,8 @@
 #define CONFIG_BOOTDELAY	1
 #define CONFIG_EXTRA_ENV_SETTINGS	\
 		"hwconfig=dsp:wake=yes\0" \
-		"extrabootargs="CONFIG_EXTRA_BOOTARGS"\0"
+		"extrabootargs="CONFIG_EXTRA_BOOTARGS"\0" \
+                "trik_uboot_version=20170801\0"
 /*
  * U-Boot commands
  */
