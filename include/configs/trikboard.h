@@ -270,7 +270,7 @@
 #define CONFIG_SYS_LONGHELP
 #define CONFIG_CRC32_VERIFY
 #define CONFIG_MX_CYCLIC
-#define CONFIG_PREBOOT "if fatload mmc 0:1 0xC0700000 /u-boot.run || ext4load mmc 0:2 0xC0700000 /u-boot.run ; then source  0xC0700000; fi"
+#define CONFIG_PREBOOT "if run load_uboot_patch; then source  0xC0700000; fi"
 
 
 /*
@@ -281,14 +281,17 @@
 #define CONFIG_CMDLINE_TAG
 #define CONFIG_REVISION_TAG
 #define CONFIG_SETUP_MEMORY_TAGS
-#define CONFIG_BOOTARGS		\
-	"mem=128M@0xC0000000 mem=64M@0xCC000000 console=ttyS1,115200n8 rw noinitrd rootwait root=/dev/mmcblk0p2 vt.global_cursor_default=0 consoleblank=0 trik.jcx=ecap "
-#define CONFIG_EXTRA_BOOTARGS   \
-	"vt.global_cursor_default=0 consoleblank=0 "
+#define CONFIG_EXTRA_BOOTARGS   ""
+#define CONFIG_BOOTARGS	""
 #define CONFIG_BOOTCOMMAND \
-	"mmc dev; ext4load mmc 0:2 0xc0700000 /boot/uImage; bootm; "
+	"run load_kernel; run set_bootargs; bootm; "
 #define CONFIG_BOOTDELAY	1
 #define CONFIG_EXTRA_ENV_SETTINGS	\
+		"load_kernel=mmc dev; ext4load mmc 0:1 0xc0700000 /boot/uImage\0" \
+                "rootdev=/dev/mmcblk0p1\0"\
+		"load_uboot_patch=fatload mmc 0:1 0xC0700000 /u-boot.run || ext4load mmc 0:2 0xC0700000 /u-boot.run ||  ext4load mmc 0:1 0xC0700000 /u-boot.run\0" \
+		"set_bootargs=setenv bootargs mem=128M@0xC0000000 mem=64M@0xCC000000 console=ttyS1,115200n8 rw noinitrd rootwait " \
+                              "root=${rootdev} vt.global_cursor_default=0 consoleblank=0 ${extrabootargs}\0" \
 		"hwconfig=dsp:wake=yes\0" \
 		"extrabootargs="CONFIG_EXTRA_BOOTARGS"\0" \
                 "trik_uboot_version=20170801\0"
