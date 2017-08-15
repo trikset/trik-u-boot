@@ -284,10 +284,11 @@
 #define CONFIG_EXTRA_BOOTARGS   ""
 #define CONFIG_BOOTARGS	""
 #define CONFIG_BOOTCOMMAND \
-	"run load_kernel; run set_bootargs; bootm; "
+	"run restore_env; run load_kernel; run set_bootargs; bootm; "
 #define CONFIG_BOOTDELAY	1
 #define CONFIG_EXTRA_ENV_SETTINGS	\
 		"load_kernel=mmc dev; ext4load mmc 0:1 0xc0700000 /boot/uImage\0" \
+		"restore_env=sf probe; sf read  0xc0700000 0x40000 0x100; mw.b 0xc0700100 0xff 0x100; cmp.b 0xc0700000 0xc0700100 0x100 && saveenv\0" \
                 "rootdev=/dev/mmcblk0p1\0"\
 		"load_uboot_patch=fatload mmc 0:1 0xC0700000 /u-boot.run || ext4load mmc 0:2 0xC0700000 /u-boot.run ||  ext4load mmc 0:1 0xC0700000 /u-boot.run\0" \
 		"set_bootargs=setenv bootargs mem=128M@0xC0000000 mem=64M@0xCC000000 console=ttyS1,115200n8 rw noinitrd rootwait " \
