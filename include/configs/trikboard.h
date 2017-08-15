@@ -271,7 +271,7 @@
 #define CONFIG_CRC32_VERIFY
 #define CONFIG_MX_CYCLIC
 #define CONFIG_PREBOOT "if run load_uboot_patch; then source  0xC0700000; fi"
-
+#define CONFIG_IDENT_STRING "http://trikset.com"
 
 /*
  * Linux Information
