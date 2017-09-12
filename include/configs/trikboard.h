@@ -354,11 +354,7 @@
 #ifdef CONFIG_SPL_MMC_LOAD
 #define CONFIG_SPL_MMC_SUPPORT
 #define CONFIG_SPL_LIBDISK_SUPPORT
-#define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR	(((1 << 20) + CONFIG_SPL_MAX_SIZE) / 512)	/* Assume:                                               */
-												/*  1) standard MS-DOS partition layout                  */
-												/*  2) partitions aligned at 1Mb boundary (2048 sectors) */
-												/*  3) u-boot.ais partition start at 1Mb offset from     */
-												/*     SD/MMC card begin and at least of 256Kb long      */
+#define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR	(( CONFIG_SPL_MAX_SIZE + 4096 /*for MBR + reserve */ ) / 512)
 #endif /* CONFIG_SPL_MMC_LOAD */
 
 #ifdef CONFIG_SPL_GUNZIP_SUPPORT
