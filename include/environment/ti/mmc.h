@@ -15,7 +15,7 @@
 	"finduuid=part uuid mmc ${bootpart} uuid\0" \
 	"args_mmc=run finduuid;setenv bootargs console=${console} " \
 		"${optargs} " \
-		"root=PARTUUID=${uuid} rw " \
+		"root=${rootdev} rw " \
 		"rootfstype=${mmcrootfstype}\0" \
 	"loadbootscript=load mmc ${mmcdev} ${loadaddr} boot.scr\0" \
 	"bootscript=echo Running bootscript from mmc${mmcdev} ...; " \
@@ -48,13 +48,13 @@
 				"bootz ${loadaddr} - ${fdtaddr}; " \
 			"else " \
 				"if test ${boot_fdt} = try; then " \
-					"bootz; " \
+					"bootm; " \
 				"else " \
 					"echo WARN: Cannot load the DT; " \
 				"fi; " \
 			"fi; " \
 		"else " \
-			"bootz; " \
+			"bootm; " \
 		"fi;\0" \
 	"mmcboot=mmc dev ${mmcdev}; " \
 		"setenv devnum ${mmcdev}; " \

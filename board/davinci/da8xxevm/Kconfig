@@ -50,4 +50,17 @@ config SYS_CONFIG_NAME
 
 endif
 
+if TARGET_TRIKBOARD
+
+config SYS_BOARD
+	default "da8xxevm"
+
+config SYS_VENDOR
+	default "davinci"
+
+config SYS_CONFIG_NAME
+	default "trikboard"
+
+endif
+
 source "board/ti/common/Kconfig"

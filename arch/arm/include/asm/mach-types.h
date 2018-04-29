@@ -2135,7 +2135,7 @@
 #define MACH_TYPE_MERLIN               2155
 #define MACH_TYPE_FALCON               2156
 #define MACH_TYPE_DAVINCI_DA850_EVM    2157
-#define MACH_TYPE_S5P6440              2158
+#define MACH_TYPE_DAVINCI_TRIK         2158
 #define MACH_TYPE_AT91SAM9G10EK        2159
 #define MACH_TYPE_OMAP_4430SDP         2160
 #define MACH_TYPE_LPC313X              2161
