@@ -16,6 +16,12 @@ config TARGET_DA850EVM
 	select SOC_DA850
 	select SUPPORT_SPL
 
+config TARGET_TRIKBOARD
+	bool "TRIK board"
+	select MACH_DAVINCI_TRIKBOARD
+	select SOC_DA850
+	select SUPPORT_SPL
+
 config TARGET_EA20
 	bool "EA20 board"
 	select MACH_DAVINCI_DA850_EVM
@@ -61,6 +67,9 @@ config SOC_DA8XX
 	select SYS_DA850_DDR_INIT if SUPPORT_SPL || DA850_LOWLEVEL
 
 config MACH_DAVINCI_DA850_EVM
+	bool
+
+config MACH_DAVINCI_TRIKBOARD
 	bool
 
 if SYS_DA850_PLL_INIT
