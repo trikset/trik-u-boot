@@ -21,6 +21,10 @@ const struct pinmux_config spi0_pins_scs0[] = {
 	{ pinmux(4), 1, 1 }, /* SPI0_SCS[0] */
 };
 
+const struct pinmux_config spi0_pins_scs1[] = {
+	{ pinmux(4), 1, 0 }, /* SPI0_SCS[1] */
+};
+
 const struct pinmux_config spi1_pins_base[] = {
 	{ pinmux(5), 1, 2 }, /* SPI1_CLK */
 	{ pinmux(5), 1, 4 }, /* SPI1_SOMI */
