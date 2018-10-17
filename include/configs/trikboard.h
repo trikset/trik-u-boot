@@ -218,8 +218,8 @@
 	"bootpart=0:1\0" \
 	"bootdir=/boot\0" \
 	"bootfile=zImage\0" \
-	"fdtfile=da850-evm.dtb\0" \
-	"boot_fdt=no\0" \
+	"fdtfile=trikboard.dtb\0" \
+	"boot_fdt=try\0" \
 	"boot_fit=0\0" \
 	"console=ttyS1,115200n8\0" \
 	"hwconfig=dsp:wake=yes\0" \
