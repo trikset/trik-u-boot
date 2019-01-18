@@ -19,14 +19,12 @@
 #include <asm/io.h>
 #include <asm/arch/davinci_misc.h>
 #include <asm/arch/gpio.h>
+#include <asm/gpio.h>
 #include <linux/errno.h>
 #include <hwconfig.h>
 #include <asm/mach-types.h>
-
-#ifdef CONFIG_MMC_DAVINCI
 #include <mmc.h>
 #include <asm/arch/sdmmc_defs.h>
-#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -88,10 +86,8 @@ int misc_init_r(void)
 	return 0;
 }
 
-#ifdef CONFIG_MMC_DAVINCI
 static struct davinci_mmc mmc_sd0 = {
 	.reg_base = (struct davinci_mmc_regs *)DAVINCI_MMC_SD0_BASE,
-	.input_clk      = 228000000,
 	.host_caps = MMC_MODE_4BIT,     /* DA850 supports only 4-bit SD/MMC */
 	.voltages = MMC_VDD_32_33 | MMC_VDD_33_34,
 	.version = MMC_CTLR_VERSION_2,
@@ -104,41 +100,30 @@ int board_mmc_init(bd_t *bis)
 	/* Add slot-0 to mmc subsystem */
 	return davinci_mmc_init(bis, &mmc_sd0);
 }
-#endif
 
-static const struct pinmux_config trik_gpio_keys_pins[] = {
-        { pinmux(8), 8, 3 }, /*GPIO3[4]*/
-        { pinmux(7), 8, 3 }, /*GPIO3[12]*/
-        { pinmux(7), 8, 2 }, /*GPIO3[13]*/
-        { pinmux(7), 8, 0 }, /*GPIO3[15]*/
-        { pinmux(6), 8, 7 }, /*GPIO2[0]*/
-        /*LEDS*/
-};
-#define LED_GPIO_BANK   (davinci_gpio_bank45)
-#define LED_GREEN_GPIO  (1u << (0x10 + 8))
-#define LED_RED_GPIO    (1u << (0x10 + 7))
-
-#define BACK_LIGHT_GPIO_BANK (davinci_gpio_bank67)
-#define BACK_LIGHT_GPIO (1u << (0x0c))
+#define LED_GREEN_GPIO  88
+#define LED_RED_GPIO    87
 static const struct pinmux_config trik_gpio_leds_pins[] = {
-        { pinmux(11), 8, 7 }, /*GPIO5[8] green */
-        { pinmux(12), 8, 0 }, /*GPIO5[7] red */
-        { pinmux(13), 8, 3 },/*GPIO6[12] Back_light*/
+	{ pinmux(11), 8, 7 }, /*GPIO5[8] green */
+	{ pinmux(12), 8, 0 }, /*GPIO5[7] red */
 };
 
+/* This pins cannot be properly configured in linux */
+#define WIFI_LVL_GPIO    104
+static const struct pinmux_config trik_clock_and_power_pins[] = {
+	{ pinmux(13), 1, 1}, /* OBSCLK0 */
+	{ pinmux(13), 8, 7}, /* GPIO6[8] */
+};
 
-#ifdef CONFIG_MMC
 static const struct pinmux_config trik_mmcsd0_pins[] = {
-        { pinmux(10), 8, 6 }, /* GP4[1] - insert/remove pin */
-        { pinmux(10), 2, 5 }, /* MMCSD0_DAT[3]              */
-        { pinmux(10), 2, 4 }, /* MMCSD0_DAT[2]              */
-        { pinmux(10), 2, 3 }, /* MMCSD0_DAT[1]              */
-        { pinmux(10), 2, 2 }, /* MMCSD0_DAT[0]              */
-        { pinmux(10), 2, 1 }, /* MMCSD0_CMD                 */
-        { pinmux(10), 2, 0 }, /* MMCSD0_CLK                 */
+	{ pinmux(10), 8, 6 }, /* GP4[1] - insert/remove pin */
+	{ pinmux(10), 2, 5 }, /* MMCSD0_DAT[3]              */
+	{ pinmux(10), 2, 4 }, /* MMCSD0_DAT[2]              */
+	{ pinmux(10), 2, 3 }, /* MMCSD0_DAT[1]              */
+	{ pinmux(10), 2, 2 }, /* MMCSD0_DAT[0]              */
+	{ pinmux(10), 2, 1 }, /* MMCSD0_CMD                 */
+	{ pinmux(10), 2, 0 }, /* MMCSD0_CLK                 */
 };
-#endif
-
 
 const struct pinmux_resource pinmuxes[] = {
 #ifdef CONFIG_SPI_FLASH
@@ -147,15 +132,13 @@ const struct pinmux_resource pinmuxes[] = {
 	PINMUX_ITEM(spi0_pins_scs1),
 #endif
 	PINMUX_ITEM(uart1_pins_txrx),
-#ifdef CONFIG_MMC
 	PINMUX_ITEM(trik_mmcsd0_pins),
-#endif
 #ifdef CONFIG_HARD_I2C
 	PINMUX_ITEM(i2c0_pins),
 	PINMUX_ITEM(i2c1_pins),
 #endif
 	PINMUX_ITEM(trik_gpio_leds_pins),
-	PINMUX_ITEM(trik_gpio_keys_pins),
+	PINMUX_ITEM(trik_clock_and_power_pins),
 };
 
 const int pinmuxes_size = ARRAY_SIZE(pinmuxes);
@@ -165,49 +148,10 @@ const struct lpsc_resource lpsc[] = {
 	{ DAVINCI_LPSC_SPI0 },	/* Serial Flash */
 	{ DAVINCI_LPSC_UART1 },	/* console */
 	{ DAVINCI_LPSC_GPIO },
-#ifdef CONFIG_MMC_DAVINCI
 	{ DAVINCI_LPSC_MMC_SD },
-#endif
 };
 
 const int lpsc_size = ARRAY_SIZE(lpsc);
-
-#ifndef CONFIG_DA850_EVM_MAX_CPU_CLK
-#define CONFIG_DA850_EVM_MAX_CPU_CLK	300000000
-#endif
-
-#define REV_AM18X_EVM		0x100
-
-/*
- * get_board_rev() - setup to pass kernel board revision information
- * Returns:
- * bit[0-3]	Maximum cpu clock rate supported by onboard SoC
- *		0000b - 300 MHz
- *		0001b - 372 MHz
- *		0010b - 408 MHz
- *		0011b - 456 MHz
- */
-u32 get_board_rev(void)
-{
-	char *s;
-	u32 maxcpuclk = CONFIG_DA850_EVM_MAX_CPU_CLK;
-	u32 rev = 0;
-
-	s = env_get("maxcpuclk");
-	if (s)
-		maxcpuclk = simple_strtoul(s, NULL, 10);
-
-	if (maxcpuclk >= 456000000)
-		rev = 3;
-	else if (maxcpuclk >= 408000000)
-		rev = 2;
-	else if (maxcpuclk >= 372000000)
-		rev = 1;
-#ifdef CONFIG_DA850_AM18X_EVM
-	rev |= REV_AM18X_EVM;
-#endif
-	return rev;
-}
 
 int board_early_init_f(void)
 {
@@ -243,27 +187,17 @@ int board_init(void)
 	if (davinci_configure_pin_mux_items(pinmuxes, ARRAY_SIZE(pinmuxes)))
 		return 1;
 
-#if 0
-#ifdef CONFIG_MMC_DAVINCI
-	/* Set the GPIO direction as output */
-	clrbits_le32((u32 *)GPIO_BANK0_REG_DIR_ADDR, (0x01 << 11));
-
-	/* Set the output as high */
-	writel(0x01 << 11, GPIO_BANK0_REG_SET_ADDR);
-#endif
-#endif
-
 	/* enable the console UART */
 	writel((DAVINCI_UART_PWREMU_MGMT_FREE | DAVINCI_UART_PWREMU_MGMT_URRST |
 		DAVINCI_UART_PWREMU_MGMT_UTRST),
 	       &davinci_uart1_ctrl_regs->pwremu_mgmt);
 
-	LED_GPIO_BANK->dir &= ~LED_GREEN_GPIO;
-	LED_GPIO_BANK->clr_data |= LED_GREEN_GPIO;
+	/* Turn on main LED */
+	gpio_direction_output(LED_GREEN_GPIO, 0);
+	gpio_direction_output(LED_RED_GPIO, 1);
 
-	LED_GPIO_BANK->dir &= ~LED_RED_GPIO;
-	LED_GPIO_BANK->set_data |= LED_RED_GPIO;
-
+	/* Enable WIFI level shifter */
+	gpio_direction_output(WIFI_LVL_GPIO, 1);
 
 	return 0;
 }
