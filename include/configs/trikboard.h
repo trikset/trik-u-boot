@@ -34,10 +34,10 @@
 #define CONFIG_SYS_OSCIN_FREQ		24000000
 #define CONFIG_SYS_TIMERBASE		DAVINCI_TIMER0_BASE
 #define CONFIG_SYS_HZ_CLOCK		clk_get(DAVINCI_AUXCLK_CLKID)
+#define CONFIG_DA8XX_GPIO
 
 #ifdef CONFIG_DIRECT_NOR_BOOT
 #define CONFIG_ARCH_CPU_INIT
-#define CONFIG_DA8XX_GPIO
 #define CONFIG_SYS_DV_NOR_BOOT_CFG	(0x11)
 #endif
 
@@ -199,7 +199,6 @@
 #define LINUX_BOOT_PARAM_ADDR	(PHYS_SDRAM_1 + 0x100)
 #define CONFIG_HWCONFIG		/* enable hwconfig */
 #define CONFIG_CMDLINE_TAG
-#define CONFIG_REVISION_TAG
 #define CONFIG_SETUP_MEMORY_TAGS
 
 #define CONFIG_BOOTCOMMAND \
@@ -218,8 +217,8 @@
 	"bootpart=0:1\0" \
 	"bootdir=/boot\0" \
 	"bootfile=zImage\0" \
-	"fdtfile=da850-evm.dtb\0" \
-	"boot_fdt=no\0" \
+	"fdtfile=trikboard.dtb\0" \
+	"boot_fdt=try\0" \
 	"boot_fit=0\0" \
 	"console=ttyS1,115200n8\0" \
 	"hwconfig=dsp:wake=yes\0" \
