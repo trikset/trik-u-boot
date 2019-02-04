@@ -115,6 +115,16 @@ static const struct pinmux_config trik_clock_and_power_pins[] = {
 	{ pinmux(13), 8, 7}, /* GPIO6[8] */
 };
 
+/* This pins cannot be properly configured in linux */
+#define MSP_BSL_GPIO     80
+#define MSP_TEST_GPIO    85
+#define MSP_RESET_GPIO   93
+static const struct pinmux_config trik_msp430_pins[] = {
+	{ pinmux(12), 8, 7}, /* GP5[0] */
+	{ pinmux(12), 8, 2}, /* GP5[5] */
+	{ pinmux(11), 8, 2}, /* GP5[13] */
+};
+
 static const struct pinmux_config trik_mmcsd0_pins[] = {
 	{ pinmux(10), 8, 6 }, /* GP4[1] - insert/remove pin */
 	{ pinmux(10), 2, 5 }, /* MMCSD0_DAT[3]              */
@@ -139,6 +149,7 @@ const struct pinmux_resource pinmuxes[] = {
 #endif
 	PINMUX_ITEM(trik_gpio_leds_pins),
 	PINMUX_ITEM(trik_clock_and_power_pins),
+	PINMUX_ITEM(trik_msp430_pins),
 };
 
 const int pinmuxes_size = ARRAY_SIZE(pinmuxes);
@@ -198,6 +209,13 @@ int board_init(void)
 
 	/* Enable WIFI level shifter */
 	gpio_direction_output(WIFI_LVL_GPIO, 1);
+
+	/* Start MSP in application mode */
+	gpio_direction_output(MSP_BSL_GPIO, 0);
+	gpio_direction_output(MSP_TEST_GPIO, 0);
+	gpio_direction_output(MSP_RESET_GPIO, 0);
+	udelay(50000);
+	gpio_direction_output(MSP_RESET_GPIO, 1);
 
 	return 0;
 }
