@@ -111,9 +111,17 @@ static const struct pinmux_config trik_gpio_leds_pins[] = {
 
 /* This pins cannot be properly configured in linux */
 #define WIFI_LVL_GPIO    104
+#define POWER_CONNECTORS 94
+#define POWER_E1_EN      35
+#define POWER_C_EN       36
+#define POWER_E0_EN      37
 static const struct pinmux_config trik_clock_and_power_pins[] = {
-	{ pinmux(13), 1, 1}, /* OBSCLK0 */
-	{ pinmux(13), 8, 7}, /* GPIO6[8] */
+	{ pinmux(13), 1, 1 }, /* OBSCLK0 */
+	{ pinmux(13), 8, 7 }, /* GPIO6[8] */
+	{ pinmux(11), 8, 1 }, /* GPIO5[14] */
+	{ pinmux(6),  8, 4 }, /* GPIO2[3] */
+	{ pinmux(6),  8, 3 }, /* GPIO2[4] */
+	{ pinmux(6),  8, 2 }, /* GPIO2[5] */
 };
 
 /* This pins cannot be properly configured in linux */
@@ -210,6 +218,12 @@ int board_init(void)
 
 	/* Enable WIFI level shifter */
 	gpio_direction_output(WIFI_LVL_GPIO, 1);
+
+	/* Enable 5V circuits */
+	gpio_direction_output(POWER_CONNECTORS, 1);
+	gpio_direction_output(POWER_E0_EN, 1);
+	gpio_direction_output(POWER_E1_EN, 1);
+	gpio_direction_output(POWER_C_EN, 1);
 
 	/* Start MSP in application mode */
 	gpio_direction_output(MSP_BSL_GPIO, 0);
