@@ -3,8 +3,11 @@
  * Copyright (C) 2015 Thomas Chou <thomas@wytron.com.tw>
  */
 
+#define LOG_CATEGORY UCLASS_MTD
+
 #include <common.h>
 #include <dm.h>
+#include <dm/device-internal.h>
 #include <errno.h>
 #include <mtd.h>
 
@@ -16,5 +19,5 @@
 UCLASS_DRIVER(mtd) = {
 	.id		= UCLASS_MTD,
 	.name		= "mtd",
-	.per_device_auto_alloc_size = sizeof(struct mtd_info),
+	.per_device_auto	= sizeof(struct mtd_info),
 };

@@ -2,6 +2,8 @@
  *  linux/lib/vsprintf.c
  *
  *  Copyright (C) 1991, 1992  Linus Torvalds
+ * (C) Copyright 2000-2009
+ * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  */
 
 /* vsprintf.c -- Lars Wirzenius & Linus Torvalds. */
@@ -15,14 +17,14 @@
 #include <charset.h>
 #include <efi_loader.h>
 #include <div64.h>
-#include <uuid.h>
+#include <hexdump.h>
 #include <stdarg.h>
+#include <uuid.h>
+#include <vsprintf.h>
 #include <linux/ctype.h>
 #include <linux/err.h>
 #include <linux/types.h>
 #include <linux/string.h>
-
-#define noinline __attribute__((noinline))
 
 /* we use this so that we can do without the ctype library */
 #define is_digit(c)	((c) >= '0' && (c) <= '9')
@@ -273,28 +275,30 @@ static char *string(char *buf, char *end, char *s, int field_width,
 	return buf;
 }
 
+/* U-Boot uses UTF-16 strings in the EFI context only. */
+#if CONFIG_IS_ENABLED(EFI_LOADER) && !defined(API_BUILD)
 static char *string16(char *buf, char *end, u16 *s, int field_width,
 		int precision, int flags)
 {
-	u16 *str = s ? s : L"<NULL>";
-	int utf16_len = utf16_strnlen(str, precision);
-	u8 utf8[utf16_len * MAX_UTF8_PER_UTF16];
-	int utf8_len, i;
-
-	utf8_len = utf16_to_utf8(utf8, str, utf16_len) - utf8;
+	const u16 *str = s ? s : L"<NULL>";
+	ssize_t i, len = utf16_strnlen(str, precision);
 
 	if (!(flags & LEFT))
-		while (utf8_len < field_width--)
+		for (; len < field_width; --field_width)
 			ADDCH(buf, ' ');
-	for (i = 0; i < utf8_len; ++i)
-		ADDCH(buf, utf8[i]);
-	while (utf8_len < field_width--)
+	for (i = 0; i < len && buf + utf16_utf8_strnlen(str, 1) <= end; ++i) {
+		s32 s = utf16_get(&str);
+
+		if (s < 0)
+			s = '?';
+		utf8_put(s, &buf);
+	}
+	for (; len < field_width; --field_width)
 		ADDCH(buf, ' ');
 	return buf;
 }
 
-#if defined(CONFIG_EFI_LOADER) && \
-	!defined(CONFIG_SPL_BUILD) && !defined(API_BUILD)
+#if CONFIG_IS_ENABLED(EFI_DEVICE_PATH_TO_TEXT)
 static char *device_path_string(char *buf, char *end, void *dp, int field_width,
 				int precision, int flags)
 {
@@ -313,18 +317,7 @@ static char *device_path_string(char *buf, char *end, void *dp, int field_width,
 	return buf;
 }
 #endif
-
-#ifdef CONFIG_CMD_NET
-static const char hex_asc[] = "0123456789abcdef";
-#define hex_asc_lo(x)	hex_asc[((x) & 0x0f)]
-#define hex_asc_hi(x)	hex_asc[((x) & 0xf0) >> 4]
-
-static inline char *pack_hex_byte(char *buf, u8 byte)
-{
-	*buf++ = hex_asc_hi(byte);
-	*buf++ = hex_asc_lo(byte);
-	return buf;
-}
+#endif
 
 static char *mac_address_string(char *buf, char *end, u8 *addr, int field_width,
 				int precision, int flags)
@@ -335,7 +328,7 @@ static char *mac_address_string(char *buf, char *end, u8 *addr, int field_width,
 	int i;
 
 	for (i = 0; i < 6; i++) {
-		p = pack_hex_byte(p, addr[i]);
+		p = hex_byte_pack(p, addr[i]);
 		if (!(flags & SPECIAL) && i != 5)
 			*p++ = ':';
 	}
@@ -354,8 +347,8 @@ static char *ip6_addr_string(char *buf, char *end, u8 *addr, int field_width,
 	int i;
 
 	for (i = 0; i < 8; i++) {
-		p = pack_hex_byte(p, addr[2 * i]);
-		p = pack_hex_byte(p, addr[2 * i + 1]);
+		p = hex_byte_pack(p, addr[2 * i]);
+		p = hex_byte_pack(p, addr[2 * i + 1]);
 		if (!(flags & SPECIAL) && i != 7)
 			*p++ = ':';
 	}
@@ -387,37 +380,41 @@ static char *ip4_addr_string(char *buf, char *end, u8 *addr, int field_width,
 	return string(buf, end, ip4_addr, field_width, precision,
 		      flags & ~SPECIAL);
 }
-#endif
 
 #ifdef CONFIG_LIB_UUID
 /*
- * This works (roughly) the same way as linux's, but we currently always
- * print lower-case (ie. we just keep %pUB and %pUL for compat with linux),
- * mostly just because that is what uuid_bin_to_str() supports.
+ * This works (roughly) the same way as Linux's.
  *
  *   %pUb:   01020304-0506-0708-090a-0b0c0d0e0f10
+ *   %pUB:   01020304-0506-0708-090A-0B0C0D0E0F10
  *   %pUl:   04030201-0605-0807-090a-0b0c0d0e0f10
+ *   %pUL:   04030201-0605-0807-090A-0B0C0D0E0F10
  */
 static char *uuid_string(char *buf, char *end, u8 *addr, int field_width,
 			 int precision, int flags, const char *fmt)
 {
 	char uuid[UUID_STR_LEN + 1];
-	int str_format = UUID_STR_FORMAT_STD;
+	int str_format;
 
 	switch (*(++fmt)) {
 	case 'L':
+		str_format = UUID_STR_FORMAT_GUID | UUID_STR_UPPER_CASE;
+		break;
 	case 'l':
 		str_format = UUID_STR_FORMAT_GUID;
 		break;
 	case 'B':
-	case 'b':
-		/* this is the default */
+		str_format = UUID_STR_FORMAT_STD | UUID_STR_UPPER_CASE;
 		break;
 	default:
+		str_format = UUID_STR_FORMAT_STD;
 		break;
 	}
 
-	uuid_bin_to_str(addr, uuid, str_format);
+	if (addr)
+		uuid_bin_to_str(addr, uuid, str_format);
+	else
+		strcpy(uuid, "<NULL>");
 
 	return string(buf, end, uuid, field_width, precision, flags);
 }
@@ -437,9 +434,9 @@ static char *uuid_string(char *buf, char *end, u8 *addr, int field_width,
  * - 'i' [46] for 'raw' IPv4/IPv6 addresses, IPv6 omits the colons, IPv4 is
  *       currently the same
  *
- * Note: The difference between 'S' and 'F' is that on ia64 and ppc64
- * function pointers are really function descriptors, which contain a
- * pointer to the real address.
+ * Note: IPv6 support is currently if(0)'ed out. If you ever need
+ * %pI6, please add an IPV6 Kconfig knob, make your code select or
+ * depend on that, and change the 0 below to CONFIG_IS_ENABLED(IPV6).
  */
 static char *pointer(const char *fmt, char *buf, char *end, void *ptr,
 		int field_width, int precision, int flags)
@@ -457,13 +454,12 @@ static char *pointer(const char *fmt, char *buf, char *end, void *ptr,
 #endif
 
 	switch (*fmt) {
-#if defined(CONFIG_EFI_LOADER) && \
-	!defined(CONFIG_SPL_BUILD) && !defined(API_BUILD)
+/* Device paths only exist in the EFI context. */
+#if CONFIG_IS_ENABLED(EFI_DEVICE_PATH_TO_TEXT) && !defined(API_BUILD)
 	case 'D':
 		return device_path_string(buf, end, ptr, field_width,
 					  precision, flags);
 #endif
-#ifdef CONFIG_CMD_NET
 	case 'a':
 		flags |= SPECIAL | ZEROPAD;
 
@@ -485,7 +481,8 @@ static char *pointer(const char *fmt, char *buf, char *end, void *ptr,
 		flags |= SPECIAL;
 		/* Fallthrough */
 	case 'I':
-		if (fmt[1] == '6')
+		/* %pI6 currently unused */
+		if (0 && fmt[1] == '6')
 			return ip6_addr_string(buf, end, ptr, field_width,
 					       precision, flags);
 		if (fmt[1] == '4')
@@ -493,7 +490,6 @@ static char *pointer(const char *fmt, char *buf, char *end, void *ptr,
 					       precision, flags);
 		flags &= ~SPECIAL;
 		break;
-#endif
 #ifdef CONFIG_LIB_UUID
 	case 'U':
 		return uuid_string(buf, end, ptr, field_width, precision,
@@ -619,10 +615,14 @@ repeat:
 			continue;
 
 		case 's':
-			if (qualifier == 'l' && !IS_ENABLED(CONFIG_SPL_BUILD)) {
+/* U-Boot uses UTF-16 strings in the EFI context only. */
+#if CONFIG_IS_ENABLED(EFI_LOADER) && !defined(API_BUILD)
+			if (qualifier == 'l') {
 				str = string16(str, end, va_arg(args, u16 *),
 					       field_width, precision, flags);
-			} else {
+			} else
+#endif
+			{
 				str = string(str, end, va_arg(args, char *),
 					     field_width, precision, flags);
 			}
@@ -788,22 +788,11 @@ int printf(const char *fmt, ...)
 {
 	va_list args;
 	uint i;
-	char printbuffer[CONFIG_SYS_PBSIZE];
 
 	va_start(args, fmt);
-
-	/*
-	 * For this to work, printbuffer must be larger than
-	 * anything we ever want to print.
-	 */
-	i = vscnprintf(printbuffer, sizeof(printbuffer), fmt, args);
+	i = vprintf(fmt, args);
 	va_end(args);
 
-	/* Handle error */
-	if (i <= 0)
-		return i;
-	/* Print the string */
-	puts(printbuffer);
 	return i;
 }
 
@@ -869,6 +858,22 @@ bool str2long(const char *p, ulong *num)
 {
 	char *endptr;
 
-	*num = simple_strtoul(p, &endptr, 16);
+	*num = hextoul(p, &endptr);
 	return *p != '\0' && *endptr == '\0';
+}
+
+char *strmhz(char *buf, unsigned long hz)
+{
+	long l, n;
+	long m;
+
+	n = DIV_ROUND_CLOSEST(hz, 1000) / 1000L;
+	l = sprintf(buf, "%ld", n);
+
+	hz -= n * 1000000L;
+	m = DIV_ROUND_CLOSEST(hz, 1000L);
+	if (m != 0)
+		sprintf(buf + l, ".%03ld", m);
+
+	return buf;
 }
