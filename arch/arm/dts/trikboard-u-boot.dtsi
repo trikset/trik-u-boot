@@ -1,0 +1,34 @@
+/*
+ * trikboard U-Boot Additions
+ *
+ * Copyright (C) 2017 Logic PD, Inc.
+ * Copyright (C) Adam Ford
+ *
+ * SPDX-License-Identifier:	GPL-2.0+
+ */
+
+/ {
+	soc@1c00000 {
+		u-boot,dm-spl;
+	};
+};
+
+&flash {
+	compatible = "m25p64", "spi-flash";
+};
+
+&mmc0 {
+	u-boot,dm-spl;
+};
+
+&serial1 {
+	u-boot,dm-spl;
+};
+
+&spi0 {
+	u-boot,dm-spl;
+};
+
+&gpio {
+	u-boot,dm-spl;
+};
