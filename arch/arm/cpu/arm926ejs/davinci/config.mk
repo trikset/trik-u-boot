@@ -13,4 +13,5 @@
 #
 ifndef CONFIG_SPL_BUILD
 ALL-$(CONFIG_SPL_FRAMEWORK)	+= $(obj)u-boot.ais
+ALL-$(CONFIG_SPL_GUNZIP_SUPPORT) += $(obj)u-boot-gzip.ais
 endif
