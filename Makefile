@@ -511,15 +511,15 @@ $(obj)u-boot-gzip.ais:       $(obj)spl/u-boot-spl.bin $(obj)u-boot.bin
 		$(obj)tools/mkimage -s -n /dev/null -T aisimage \
 			-e $(CONFIG_SPL_TEXT_BASE) \
 			-d $(obj)spl/u-boot-spl.bin \
-			$(obj)spl/u-boot-spl.ais
+			$(obj)spl/u-boot-spl-gzip.ais
 		$(OBJCOPY) ${OBJCFLAGS} -I binary \
 			--pad-to=$(CONFIG_SPL_MAX_SIZE) -O binary \
-			$(obj)spl/u-boot-spl.ais $(obj)spl/u-boot-spl-pad.ais
+			$(obj)spl/u-boot-spl-gzip.ais $(obj)spl/u-boot-spl-gzip-pad.ais
 		cp $(obj)u-boot.bin $(obj)spl/u-boot.bin
 		gzip $(obj)spl/u-boot.bin
-		cat $(obj)spl/u-boot-spl-pad.ais $(obj)spl/u-boot.bin.gz > \
+		cat $(obj)spl/u-boot-spl-gzip-pad.ais $(obj)spl/u-boot.bin.gz > \
 			$(obj)u-boot-gzip.ais
-		rm $(obj)spl/u-boot-spl{,-pad}.ais $(obj)spl/u-boot.bin.gz
+		rm $(obj)spl/u-boot-spl-gzip{,-pad}.ais $(obj)spl/u-boot.bin.gz
 
 # Specify the target for use in elftosb call
 ELFTOSB_TARGET-$(CONFIG_MX28) = imx28
@@ -876,6 +876,7 @@ clobber:	tidy
 	@rm -f $(obj)u-boot.imx
 	@rm -f $(obj)u-boot.ubl
 	@rm -f $(obj)u-boot.ais
+	@rm -f $(obj)u-boot-gzip.ais
 	@rm -f $(obj)u-boot.dtb
 	@rm -f $(obj)u-boot.sb
 	@rm -f $(obj)u-boot.spr
