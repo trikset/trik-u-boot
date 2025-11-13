@@ -66,9 +66,15 @@ config SYS_DV_CLKMODE
 	help
 	  Set PLLCTL Clock Mode bit as External Clock or On Chip oscillator
 
+config SYS_DA850_PLL0_PREDIV
+	int "PLLC0 PLL Pre-Divider"
+	default 0
+	help
+	  Value written to PLLC0 PLL Pre-Divider Control Register
+
 config SYS_DA850_PLL0_POSTDIV
 	int "PLLC0 PLL Post-Divider"
-	default 1
+	default 0
 	help
 	  Value written to PLLC0 PLL Post-Divider Control Register
 
