@@ -179,7 +179,7 @@
 	"console=ttyS1,115200n8\0" \
 	"hwconfig=dsp:wake=yes\0" \
 	"rootdev=/dev/mmcblk0p1\0" \
-	"optargs=mem=128M@0xC0000000 mem=64M@0xCC000000 noinitrd vt.global_cursor_default=0 consoleblank=0\0" \
+	"optargs=noinitrd vt.global_cursor_default=0 consoleblank=0\0" \
 	"trik_uboot_version=20180422"
 
 #ifdef CONFIG_CMD_BDI
