@@ -13,7 +13,7 @@
 	"mmcrootfstype=ext4 rootwait\0" \
 	"finduuid=part uuid ${boot} ${bootpart} uuid\0" \
 	"args_mmc=run finduuid;setenv bootargs console=${console} " \
-		"${optargs} " \
+		"${optargs} ${extrabootargs} " \
 		"root=PARTUUID=${uuid} ro " \
 		"rootfstype=${mmcrootfstype}\0" \
 	"loadbootscript=load mmc ${mmcdev} ${loadaddr} boot.scr\0" \
