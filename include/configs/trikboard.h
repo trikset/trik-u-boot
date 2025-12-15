@@ -165,7 +165,7 @@
 	"scriptaddr=0xc0600000\0"
 
 #include <environment/ti/mmc.h>
-
+#define CONFIG_PREBOOT "if run load_uboot_patch; then source ${scriptaddr}; fi"
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	DEFAULT_LINUX_BOOT_ENV \
 	DEFAULT_MMC_TI_ARGS \
@@ -179,7 +179,9 @@
 	"console=ttyS1,115200n8\0" \
 	"hwconfig=dsp:wake=yes\0" \
 	"rootdev=/dev/mmcblk0p1\0" \
+	"extrabootargs=""\0" \
 	"optargs=noinitrd vt.global_cursor_default=0 consoleblank=0\0" \
+	"load_uboot_patch=fatload mmc 0:1 ${scriptaddr} /u-boot.run || ext4load mmc 0:2 ${scriptaddr} /u-boot.run || ext4load mmc 0:1 ${scriptaddr} /u-boot.run\0" \
 	"trik_uboot_version=20180422"
 
 #ifdef CONFIG_CMD_BDI
