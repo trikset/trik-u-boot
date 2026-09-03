@@ -51,7 +51,7 @@
  * PLL configuration
  */
 
-#define CONFIG_SYS_DA850_PLL0_PLLM     16
+#define CONFIG_SYS_DA850_PLL0_PLLM     30
 #define CONFIG_SYS_DA850_PLL1_PLLM     21
 
 /*
