@@ -68,7 +68,7 @@ config SYS_DV_CLKMODE
 
 config SYS_DA850_PLL0_PREDIV
 	int "PLLC0 PLL Pre-Divider"
-	default 0
+	default 1
 	help
 	  Value written to PLLC0 PLL Pre-Divider Control Register
 
